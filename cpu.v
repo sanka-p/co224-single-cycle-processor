@@ -4,7 +4,7 @@
  * Authors: M. S. Peeris <e19275@eng.pdn.ac.lk>,
  *          A. P. T. T. Perera <e19278@eng.pdn.ac.lk>
  * Group: 41
- * Last Modified: 31/05/2023
+ * Last Modified: 09/06/2023
  */   
 
 `include "alu.v"
@@ -23,6 +23,8 @@ module cpu(
     reg MUX_SEL_IMM; // mux select signal to chose between original register or negated value for alu sub instruction
     reg MUX_SEL_JUMP; // mux select signal to add jump address to pc
     reg MUX_SEL_BEQ; // mux select signal to add BEQ jump address to pc
+    reg MUX_SEL_BNE; // mux select signal to add BNE jump address to pc
+    reg SHIFT_DIRECTION;
     reg[7:0] ALUIN1, ALUIN2; // alu input registers
     reg[2:0] ALUOP; // alu opcode
     
@@ -37,7 +39,8 @@ module cpu(
                     MUX_SEL_NEG <= #1 0;
                     WRITEENABLE <= #1 1;
                     MUX_SEL_JUMP <= #1 0;
-                    MUX_SEL_BEQ <= #1 0; 
+                    MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0; 
                 end
             // 1 - mov
             1:  begin
@@ -46,7 +49,8 @@ module cpu(
                     MUX_SEL_NEG <= #1 0;
                     WRITEENABLE <= #1 1;
                     MUX_SEL_JUMP <= #1 0;
-                    MUX_SEL_BEQ <= #1 0; 
+                    MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0; 
                 end
             // 2 - Add
             2:  begin
@@ -56,6 +60,7 @@ module cpu(
                     WRITEENABLE <= #1 1;
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;
                 end
             // 3 - Sub
             3:  begin
@@ -65,6 +70,7 @@ module cpu(
                     WRITEENABLE <= #1 1;
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;
                 end
             // 4 - And
             4:  begin
@@ -74,6 +80,7 @@ module cpu(
                     WRITEENABLE <= #1 1;
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;
                 end
             // 5 - Or
             5:  begin
@@ -83,6 +90,7 @@ module cpu(
                     WRITEENABLE <= #1 1;
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;
                 end
             // 6 - Jump
             6:  begin
@@ -91,6 +99,7 @@ module cpu(
                     WRITEENABLE <= #1 0;
                     MUX_SEL_JUMP <= #1 1;
                     MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;
                 end
             // 7 - BEQ
             7:  begin
@@ -100,6 +109,69 @@ module cpu(
                     WRITEENABLE <= #1 0;
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 1;
+                    MUX_SEL_BNE <= #1 0;
+                end
+            // 12 - Mult
+            12: begin
+                    ALUOP <= #1 4;
+                    MUX_SEL_NEG <= #1 0;
+                    MUX_SEL_IMM <= #1 0;
+                    WRITEENABLE <= #1 1;
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;
+                end 
+            // 13 - BNE
+            13: begin
+                    ALUOP <= #1 1;
+                    MUX_SEL_NEG <= #1 1;
+                    MUX_SEL_IMM <= #1 0;
+                    WRITEENABLE <= #1 0;
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 1;
+                end
+            // 14 - SLL
+            14: begin
+                    ALUOP <= #1 5;
+                    MUX_SEL_NEG <= #1 0;
+                    MUX_SEL_IMM <= #1 1;
+                    WRITEENABLE <= #1 1;
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;
+                    SHIFT_DIRECTION <= #1 0;
+                end
+            // 15 - SLR
+            15: begin
+                    ALUOP <= #1 5;
+                    MUX_SEL_NEG <= #1 0;
+                    MUX_SEL_IMM <= #1 1;
+                    WRITEENABLE <= #1 1;
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;
+                    SHIFT_DIRECTION <= #1 1;
+                end
+            // 16 - ROR
+            16: begin
+                    ALUOP <= #1 7;
+                    MUX_SEL_NEG <= #1 0;
+                    MUX_SEL_IMM <= #1 1;
+                    WRITEENABLE <= #1 1;
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;
+            end
+            // 17 - SRA
+            17: begin
+                    ALUOP <= #1 6;
+                    MUX_SEL_NEG <= #1 0;
+                    MUX_SEL_IMM <= #1 1;
+                    WRITEENABLE <= #1 1;
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;        
                 end
         endcase
     end   
@@ -145,11 +217,12 @@ module cpu(
         ALUIN2, 
         ALUOP, 
         WRITEDATA,
-        ZERO
+        ZERO,
+        SHIFT_DIRECTION
     );
 
-    // declare register to hold pc value and calculated next pc value
-    reg[31:0] PC_REG, NEXT_PC_REG, SIGN_EXTENDED_TARGET;
+    // declare register to hold pc value and calculated next pc value and next pc value with jump target
+    reg[31:0] PC_REG, NEXT_PC_REG, PC_PLUS_4, SIGN_EXTENDED_TARGET;
     assign PC = PC_REG;
 
     // update pc at each clock edge
@@ -162,23 +235,32 @@ module cpu(
         if (RESET == 1)
         begin
             PC_REG = 0;
+            PC_PLUS_4 = 0;
             NEXT_PC_REG = 0;
         end
     end
 
     // increment next pc after pc update
     always @ (PC_REG)
-        #1 NEXT_PC_REG = NEXT_PC_REG + 4;
+        #1 PC_PLUS_4 = PC_REG + 4;
 
-    // Sign extend jump target to 32 bits and convert from a word address to a byte address
+    // sign extend jump target to 32 bits and convert from a word address to a byte address
     always @ (INSTRUCTION)
-        SIGN_EXTENDED_TARGET <= { {24{INSTRUCTION[23]}}, INSTRUCTION[23:16] << 2 };
+        SIGN_EXTENDED_TARGET =  { {24{INSTRUCTION[23]}}, INSTRUCTION[23:16] << 2 };
 
-    // Add jump target to pc
-    always @ (MUX_SEL_BEQ, ZERO, MUX_SEL_JUMP)
+    // compute flag to determine whether to use next pc value with jump target added or not
+    reg IS_JUMP_ENABLED;
+    always @ (MUX_SEL_BEQ, ZERO, MUX_SEL_JUMP, MUX_SEL_BNE)
+        IS_JUMP_ENABLED = (MUX_SEL_BEQ && ZERO) || MUX_SEL_JUMP || (MUX_SEL_BNE && ~ZERO);
+    
+     
+    always@(IS_JUMP_ENABLED, SIGN_EXTENDED_TARGET, PC_PLUS_4)
     begin
-        if ((MUX_SEL_BEQ && ZERO) || MUX_SEL_JUMP)
-            #2 NEXT_PC_REG = NEXT_PC_REG + SIGN_EXTENDED_TARGET;
+        // add jump target to next pc value
+        if (IS_JUMP_ENABLED)
+            #2 NEXT_PC_REG = PC_PLUS_4 + SIGN_EXTENDED_TARGET;
+        else
+            #2 NEXT_PC_REG = PC_PLUS_4;
     end
 
 endmodule
