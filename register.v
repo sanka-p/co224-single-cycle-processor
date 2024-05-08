@@ -7,6 +7,8 @@
  * Last Modified: 31/05/2023
  */   
 
+`timescale 1ns/100ps
+
 /*
 // stimulus block
 module testbench;

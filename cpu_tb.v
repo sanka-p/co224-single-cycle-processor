@@ -2,8 +2,8 @@
 // Design: Testbench of Integrated CPU of Simple Processor
 // Author: Isuru Nawinne
 
+`timescale 1ns/100ps
 `include "cpu.v"
-
 module cpu_tb;
 
     reg CLK, RESET;
@@ -101,11 +101,17 @@ module cpu_tb;
             $dumpvars(1, cpu_tb.mycpu.cpu_reg_file.REGISTER[i]);
         end
         
-        for(i = 0; i < 16; i = i +1)
+        for(i = 0; i < 8; i = i +1)
         begin
-            $dumpvars(1, cpu_tb.mycpu.cpu_data_memory.memory_array[i]);
+            $dumpvars(1, cpu_tb.mycpu.dcache.cache[i]);
+            $dumpvars(1, cpu_tb.mycpu.dcache.tag[i]);
+            $dumpvars(1, cpu_tb.mycpu.dcache.dirty[i]);
+            $dumpvars(1, cpu_tb.mycpu.dcache.valid[i]);
         end
-
+        for(i = 0; i < 255; i = i +1)
+        begin
+            $dumpvars(1, cpu_tb.mycpu.dcache.dmemory.memory_array[i]);
+        end
         CLK = 1'b0;
         
         // TODO: Reset the CPU (by giving a pulse to RESET signal) to start the program execution

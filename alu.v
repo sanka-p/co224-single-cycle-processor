@@ -7,7 +7,7 @@
  * Last Modified: 09/06/2023
  */   
 
-// `timescale 1s/100ms
+`timescale 1ns/100ps
 
 /*
 // stimulus block

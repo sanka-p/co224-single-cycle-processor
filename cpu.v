@@ -7,9 +7,10 @@
  * Last Modified: 14/06/2023
  */   
 
+`timescale 1ns/100ps
 `include "alu.v"
 `include "register.v"
-`include "dmem.v"
+`include "dcache.v"
 
 module cpu(
     // declare ports
@@ -69,8 +70,9 @@ module cpu(
                 end
             // 3 - Sub
             3:  begin
-                    ALUOP <= #1 1;
+                    ALUOP <= #2 1;
                     MUX_SEL_NEG <= #1 1;
+
                     MUX_SEL_IMM <= #1 0;
                     WRITEENABLE <= #1 1;
                     MUX_SEL_JUMP <= #1 0;
@@ -263,13 +265,13 @@ module cpu(
     wire[7:0] MEM_DATA;
     wire BUSYWAIT;
 
-    data_memory cpu_data_memory(
+    m_dcache dcache(
         CLK,
         RESET,
         READMEM_ENABLE,
         WRITEMEM_ENABLE,
-        ALURESULT,
         REGOUT1,
+        ALURESULT,
         MEM_DATA,
         BUSYWAIT
     );
@@ -336,7 +338,7 @@ module cpu(
     // (update pc only if no stalling is required)
     always @ (posedge CLK)
     begin
-        if (!BUSYWAIT)
+        if (BUSYWAIT == 0)
             #1 PC_REG = NEXT_PC_REG;
     end
 
@@ -348,6 +350,8 @@ module cpu(
             PC_REG = 0;
             PC_PLUS_4 = 0;
             NEXT_PC_REG = 0;
+            WRITEMEM_ENABLE = 0;
+            READMEM_ENABLE = 0;
         end
     end
 
