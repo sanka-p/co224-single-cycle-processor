@@ -11,14 +11,17 @@
 `include "alu.v"
 `include "register.v"
 `include "dcache.v"
+`include "icache.v"
 
 module cpu(
     // declare ports
     output[31:0] PC, // 32-bit program counter value
-    input[31:0] INSTRUCTION, // 32-bit instruction value
+    // input[31:0] INSTRUCTION, // 32-bit instruction value
     input CLK,
     input RESET
 );
+
+    reg[31:0] INSTRUCTION;
 
     reg WRITEENABLE; // write enable signal to register file 
     reg MUX_SEL_NEG; // mux select signal to chose between immediate value or register value for alu
@@ -128,8 +131,8 @@ module cpu(
              * instruction mem operations in the always block (lines 36 to 41 in dmem.v), 
              * hence to trigger this block the write or read enabling signals create a pulse as shown below
              * for lwd, lwi
-             *      READMEM_ENABLE <= 0;
-             *      READMEM_ENABLE <= #1 1;
+             *      CACHE_READMEM_ENABLE <= 0;
+             *      CACHE_READMEM_ENABLE <= #1 1;
              * for swd, swi
              *      WRITEMEM_ENABLE <= 0;
              *      WRITEMEM_ENABLE <= #1 1;
@@ -143,8 +146,8 @@ module cpu(
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
                     MUX_SEL_BNE <= #1 0;
-                    READMEM_ENABLE <= 0;    // TEMP FIX !!!!!!!!!!
-                    READMEM_ENABLE <= #1 1;
+                    CACHE_READMEM_ENABLE <= 0;    // TEMP FIX !!!!!!!!!!
+                    CACHE_READMEM_ENABLE <= #1 1;
                     WRITEMEM_ENABLE <= #1 0;
                     SEL_DMEM_ALU <= #1 0;   // Write to register from dmem
             end
@@ -157,8 +160,8 @@ module cpu(
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
                     MUX_SEL_BNE <= #1 0;
-                    READMEM_ENABLE <= 0;    // TEMP FIX !!!!!!!!!!
-                    READMEM_ENABLE <= #1 1;
+                    CACHE_READMEM_ENABLE <= 0;    // TEMP FIX !!!!!!!!!!
+                    CACHE_READMEM_ENABLE <= #1 1;
                     WRITEMEM_ENABLE <= #1 0;
                     SEL_DMEM_ALU <= #1 0;   // Write to register from dmem
             end
@@ -171,7 +174,7 @@ module cpu(
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
                     MUX_SEL_BNE <= #1 0;
-                    READMEM_ENABLE <= #1 0;
+                    CACHE_READMEM_ENABLE <= #1 0;
                     WRITEMEM_ENABLE <= 0;   // TEMP FIX !!!!!!!!!!
                     WRITEMEM_ENABLE <= #1 1;
                     SEL_DMEM_ALU <= #1 0;
@@ -185,7 +188,7 @@ module cpu(
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
                     MUX_SEL_BNE <= #1 0;
-                    READMEM_ENABLE <= #1 0;
+                    CACHE_READMEM_ENABLE <= #1 0;
                     WRITEMEM_ENABLE <= 0;   // TEMP FIX !!!!!!!!!!
                     WRITEMEM_ENABLE <= #1 1;
                     SEL_DMEM_ALU <= #1 0;
@@ -261,20 +264,43 @@ module cpu(
     end   
     
 
-    reg READMEM_ENABLE, WRITEMEM_ENABLE; 
+    // define data cache
+    reg CACHE_READMEM_ENABLE, WRITEMEM_ENABLE; 
     wire[7:0] MEM_DATA;
-    wire BUSYWAIT;
+    wire CACHE_BUSYWAIT;
 
     m_dcache dcache(
         CLK,
         RESET,
-        READMEM_ENABLE,
+        CACHE_READMEM_ENABLE,
         WRITEMEM_ENABLE,
-        REGOUT1,
         ALURESULT,
+        REGOUT1,
         MEM_DATA,
-        BUSYWAIT
+        CACHE_BUSYWAIT
     );
+
+    // define instruction cache
+    reg INSTRUCTION_READMEM_ENABLE; 
+    wire[31:0] INSTRUCTION_MEM_DATA;
+    wire INSTRUCTION_BUSYWAIT;
+
+    m_icache icache(
+        CLK,
+        RESET,
+        INSTRUCTION_READMEM_ENABLE,
+        PC,
+        INSTRUCTION_MEM_DATA,
+        INSTRUCTION_BUSYWAIT
+    );
+
+    always @ (PC, INSTRUCTION_MEM_DATA) begin
+        if (INSTRUCTION_BUSYWAIT == 0) begin
+            INSTRUCTION_READMEM_ENABLE = 0;
+            INSTRUCTION = #2 INSTRUCTION_MEM_DATA;
+            INSTRUCTION_READMEM_ENABLE = 1;
+        end
+    end
 
     // initialize register module
     reg[7:0] WRITEDATA;
@@ -338,7 +364,7 @@ module cpu(
     // (update pc only if no stalling is required)
     always @ (posedge CLK)
     begin
-        if (BUSYWAIT == 0)
+        if (CACHE_BUSYWAIT == 0 && INSTRUCTION_BUSYWAIT == 0)
             #1 PC_REG = NEXT_PC_REG;
     end
 
@@ -351,7 +377,8 @@ module cpu(
             PC_PLUS_4 = 0;
             NEXT_PC_REG = 0;
             WRITEMEM_ENABLE = 0;
-            READMEM_ENABLE = 0;
+            CACHE_READMEM_ENABLE = 0;
+            INSTRUCTION_READMEM_ENABLE = 1;
         end
     end
 

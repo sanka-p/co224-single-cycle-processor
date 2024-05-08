@@ -22,9 +22,9 @@ module cpu_tb;
     
     // TODO: Create combinational logic to support CPU instruction fetching, given the Program Counter(PC) value 
     //       (make sure you include the delay for instruction fetching here)   
-    always @ (PC)
-        #2 INSTRUCTION_REG = {instr_mem[PC + 3], instr_mem[PC + 2], instr_mem[PC + 1], instr_mem[PC]} ;
-    assign INSTRUCTION = INSTRUCTION_REG;
+    // always @ (PC)
+    //     #2 INSTRUCTION_REG = {instr_mem[PC + 3], instr_mem[PC + 2], instr_mem[PC + 1], instr_mem[PC]} ;
+    // assign INSTRUCTION = INSTRUCTION_REG;
  
     initial
     begin
@@ -84,7 +84,7 @@ module cpu_tb;
      CPU
     -----
     */
-    cpu mycpu(PC, INSTRUCTION, CLK, RESET);
+    cpu mycpu(PC, CLK, RESET);
 
     // counter to iterate through and adress registers in reg_file
     integer i;
@@ -111,6 +111,16 @@ module cpu_tb;
         for(i = 0; i < 255; i = i +1)
         begin
             $dumpvars(1, cpu_tb.mycpu.dcache.dmemory.memory_array[i]);
+        end
+        for(i = 0; i < 255; i = i +1)
+        begin
+            $dumpvars(1, cpu_tb.mycpu.icache.imemory.memory_array[i]);
+        end
+        for(i = 0; i < 8; i = i +1)
+        begin
+            $dumpvars(1, cpu_tb.mycpu.icache.cache[i]);
+            $dumpvars(1, cpu_tb.mycpu.icache.tag[i]);
+            $dumpvars(1, cpu_tb.mycpu.icache.valid[i]);
         end
         CLK = 1'b0;
         
