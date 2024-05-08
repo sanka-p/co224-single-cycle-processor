@@ -4,9 +4,10 @@
  * Authors: M. S. Peeris <e19275@eng.pdn.ac.lk>,
  *          A. P. T. T. Perera <e19278@eng.pdn.ac.lk>
  * Group: 41
- * Last Modified: 10/05/2023
+ * Last Modified: 31/05/2023
  */   
 
+/*
 // stimulus block
 module testbench;
 
@@ -86,6 +87,7 @@ module testbench;
     always
         #4 CLK = ~CLK;
 endmodule
+*/
 
 // 8x8 register file
 module reg_file(
@@ -107,7 +109,7 @@ module reg_file(
     // Declare output registers
     reg[7:0] OUT1REGISTER, OUT2REGISTER;
 
-    // asynchronously read output registers
+    // Asynchronously read output registers
     always @ (OUT1ADDRESS, OUT2ADDRESS, REGISTER[OUT1ADDRESS], REGISTER[OUT2ADDRESS])
     begin
        OUT1REGISTER <= #2 REGISTER[OUT1ADDRESS];
@@ -121,7 +123,7 @@ module reg_file(
 
     //==========INPUT REGISTER HANDLING==========
 
-    // synchronously write to input register at positive edge of clock
+    // Synchronously write to input register at positive edge of clock
     // when the WRITE signal is high
     always @ (posedge CLK)
     begin
@@ -131,7 +133,8 @@ module reg_file(
     end
 
     //==========REGISTER RESET==========
-    // synchronously reset registers at positive edge of clock
+    
+    // Synchronously reset registers at positive edge of clock
     // when the RESET is high
     always @ (posedge CLK)
     begin
