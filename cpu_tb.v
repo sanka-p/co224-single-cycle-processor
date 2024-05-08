@@ -70,13 +70,13 @@ module cpu_tb;
         // {instr_mem[10'd12], instr_mem[10'd13], instr_mem[10'd14], instr_mem[10'd15]} = 32'b00000001_00000000_11111110_00001101; // if r0 != r1 jump 2 instructions back
 
         // TEST 4 - RIGHT ROTATER
-        {instr_mem[10'd0], instr_mem[10'd1], instr_mem[10'd2], instr_mem[10'd3]} = 32'b00000010_00000000_00000000_00000000; // load r0 2
-        {instr_mem[10'd4], instr_mem[10'd5], instr_mem[10'd6], instr_mem[10'd7]} = 32'b00001000_00000000_00000001_00000000; // load r1 64
-        {instr_mem[10'd8], instr_mem[10'd9], instr_mem[10'd10], instr_mem[10'd11]} = 32'b00000001_00000001_00000001_00010000; // ror r1 by 1 and store r1
-        {instr_mem[10'd12], instr_mem[10'd13], instr_mem[10'd14], instr_mem[10'd15]} = 32'b00000001_00000000_11111110_00001101; // if r0 != r1 jump 2 instructions back
+        // {instr_mem[10'd0], instr_mem[10'd1], instr_mem[10'd2], instr_mem[10'd3]} = 32'b00000010_00000000_00000000_00000000; // load r0 2
+        // {instr_mem[10'd4], instr_mem[10'd5], instr_mem[10'd6], instr_mem[10'd7]} = 32'b00001000_00000000_00000001_00000000; // load r1 64
+        // {instr_mem[10'd8], instr_mem[10'd9], instr_mem[10'd10], instr_mem[10'd11]} = 32'b00000001_00000001_00000001_00010000; // ror r1 by 1 and store r1
+        // {instr_mem[10'd12], instr_mem[10'd13], instr_mem[10'd14], instr_mem[10'd15]} = 32'b00000001_00000000_11111110_00001101; // if r0 != r1 jump 2 instructions back
 
         // // METHOD 2: loading instr_mem content from instr_mem.mem file
-        //$readmemb("programmer/instr_mem.mem", instr_mem);
+        $readmemb("programmer/instr_mem.mem", instr_mem);
     end
     
     /* 
@@ -101,6 +101,11 @@ module cpu_tb;
             $dumpvars(1, cpu_tb.mycpu.cpu_reg_file.REGISTER[i]);
         end
         
+        for(i = 0; i < 16; i = i +1)
+        begin
+            $dumpvars(1, cpu_tb.mycpu.cpu_data_memory.memory_array[i]);
+        end
+
         CLK = 1'b0;
         
         // TODO: Reset the CPU (by giving a pulse to RESET signal) to start the program execution
@@ -111,7 +116,7 @@ module cpu_tb;
         RESET = 1'b0;
 
         // finish simulation after some time
-        #500
+        #2000
         $finish;
         
     end

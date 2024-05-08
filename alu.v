@@ -128,6 +128,7 @@ module m_logic_lshifter(
         // Shift bits to left and pad remaining bits with 0
         case (OPERAND2[3:0])
             0: TEMP = OPERAND1;
+            // 4'b0001
             1: TEMP = {OPERAND1[6:0], 1'b0};
             2: TEMP = {OPERAND1[5:0], 2'b0};
             3: TEMP = {OPERAND1[4:0], 3'b0};
@@ -135,7 +136,6 @@ module m_logic_lshifter(
             5: TEMP = {OPERAND1[2:0], 5'b0};
             6: TEMP = {OPERAND1[1:0], 6'b0};
             7: TEMP = {OPERAND1[0], 7'b0};
-            8: TEMP = {8'b0};
             default: TEMP = {8{1'b0}};
         endcase
     end
@@ -229,12 +229,12 @@ module m_multiplier(
         number of bits, which is determined by the position of the MULTIPLIER bit. The resulting intermediate value is 
         added to the PRODUCT. This process is repeated for each bit of the MULTIPLIER.
         */
-        PRODUCT = 0;    
+        PRODUCT = 0;     
         INTERMEDIATE = {{8{{8{MULTIPLIER[0]}} & MULTIPLICAND}}, {0{1'b0}}};
         PRODUCT += INTERMEDIATE;
         INTERMEDIATE = {{7{{8{MULTIPLIER[1]}} & MULTIPLICAND}}, {1{1'b0}}};
         PRODUCT += INTERMEDIATE;
-        INTERMEDIATE = {{8{{8{MULTIPLIER[2]}} & MULTIPLICAND}}, {2{1'b0}}};
+        INTERMEDIATE = {{6{{8{MULTIPLIER[2]}} & MULTIPLICAND}}, {2{1'b0}}};
         PRODUCT += INTERMEDIATE;
         INTERMEDIATE = {{5{{8{MULTIPLIER[3]}} & MULTIPLICAND}}, {3{1'b0}}};
         PRODUCT += INTERMEDIATE;

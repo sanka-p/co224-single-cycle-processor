@@ -4,11 +4,12 @@
  * Authors: M. S. Peeris <e19275@eng.pdn.ac.lk>,
  *          A. P. T. T. Perera <e19278@eng.pdn.ac.lk>
  * Group: 41
- * Last Modified: 09/06/2023
+ * Last Modified: 14/06/2023
  */   
 
 `include "alu.v"
 `include "register.v"
+`include "dmem.v"
 
 module cpu(
     // declare ports
@@ -24,12 +25,13 @@ module cpu(
     reg MUX_SEL_JUMP; // mux select signal to add jump address to pc
     reg MUX_SEL_BEQ; // mux select signal to add BEQ jump address to pc
     reg MUX_SEL_BNE; // mux select signal to add BNE jump address to pc
+    reg SEL_DMEM_ALU; // select data between dmem or alu to write to register file
     reg SHIFT_DIRECTION;
     reg[7:0] ALUIN1, ALUIN2; // alu input registers
     reg[2:0] ALUOP; // alu opcode
     
     // Decode opcode and set control signals
-    always @ (INSTRUCTION[31:24])
+    always @ (INSTRUCTION)
     begin
         case (INSTRUCTION[31:24])
             // 0 - loadi
@@ -40,7 +42,8 @@ module cpu(
                     WRITEENABLE <= #1 1;
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
-                    MUX_SEL_BNE <= #1 0; 
+                    MUX_SEL_BNE <= #1 0;
+                    SEL_DMEM_ALU <= #1 1; 
                 end
             // 1 - mov
             1:  begin
@@ -50,7 +53,8 @@ module cpu(
                     WRITEENABLE <= #1 1;
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
-                    MUX_SEL_BNE <= #1 0; 
+                    MUX_SEL_BNE <= #1 0;
+                    SEL_DMEM_ALU <= #1 1; 
                 end
             // 2 - Add
             2:  begin
@@ -61,6 +65,7 @@ module cpu(
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
                     MUX_SEL_BNE <= #1 0;
+                    SEL_DMEM_ALU <= #1 1;
                 end
             // 3 - Sub
             3:  begin
@@ -71,6 +76,7 @@ module cpu(
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
                     MUX_SEL_BNE <= #1 0;
+                    SEL_DMEM_ALU <= #1 1;
                 end
             // 4 - And
             4:  begin
@@ -81,6 +87,7 @@ module cpu(
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
                     MUX_SEL_BNE <= #1 0;
+                    SEL_DMEM_ALU <= #1 1;
                 end
             // 5 - Or
             5:  begin
@@ -91,6 +98,7 @@ module cpu(
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
                     MUX_SEL_BNE <= #1 0;
+                    SEL_DMEM_ALU <= #1 1;
                 end
             // 6 - Jump
             6:  begin
@@ -111,6 +119,75 @@ module cpu(
                     MUX_SEL_BEQ <= #1 1;
                     MUX_SEL_BNE <= #1 0;
                 end
+            /* !!!!! IMPORTANT - FIX REQUIRED !!!!!
+             * If two lwd, lwi, swd or swi instructions are consecutively handled by
+             * the cpu, the write or read enabling signals sent to dmem will not change and not trigger
+             * the readaccess or writeaccess signal sets required for the second 
+             * instruction mem operations in the always block (lines 36 to 41 in dmem.v), 
+             * hence to trigger this block the write or read enabling signals create a pulse as shown below
+             * for lwd, lwi
+             *      READMEM_ENABLE <= 0;
+             *      READMEM_ENABLE <= #1 1;
+             * for swd, swi
+             *      WRITEMEM_ENABLE <= 0;
+             *      WRITEMEM_ENABLE <= #1 1;
+             */
+            // lwd
+            8: begin
+                    ALUOP <= #1 0;          // Forward the data address
+                    MUX_SEL_NEG <= #1 0;
+                    MUX_SEL_IMM <= #1 0;    // Direct Addressing - Use value in register
+                    WRITEENABLE <= #1 1;    // Enable writing to register
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;
+                    READMEM_ENABLE <= 0;    // TEMP FIX !!!!!!!!!!
+                    READMEM_ENABLE <= #1 1;
+                    WRITEMEM_ENABLE <= #1 0;
+                    SEL_DMEM_ALU <= #1 0;   // Write to register from dmem
+            end
+            // lwi
+            9: begin
+                    ALUOP <= #1 0;          // Forward the data address
+                    MUX_SEL_NEG <= #1 0;
+                    MUX_SEL_IMM <= #1 1;    // Imediate Addressing - Use value in instruction
+                    WRITEENABLE <= #1 1;    // Enable writing to register
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;
+                    READMEM_ENABLE <= 0;    // TEMP FIX !!!!!!!!!!
+                    READMEM_ENABLE <= #1 1;
+                    WRITEMEM_ENABLE <= #1 0;
+                    SEL_DMEM_ALU <= #1 0;   // Write to register from dmem
+            end
+            // swd
+            10: begin
+                    ALUOP <= #1 0;          // Forward the data address
+                    MUX_SEL_NEG <= #1 0;
+                    MUX_SEL_IMM <= #1 0;    // Direct Addressing - Use value in register
+                    WRITEENABLE <= #1 0;    // Disable writing to register
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;
+                    READMEM_ENABLE <= #1 0;
+                    WRITEMEM_ENABLE <= 0;   // TEMP FIX !!!!!!!!!!
+                    WRITEMEM_ENABLE <= #1 1;
+                    SEL_DMEM_ALU <= #1 0;
+            end
+            // swi 
+            11: begin
+                    ALUOP <= #1 0;          // Forward the data address
+                    MUX_SEL_NEG <= #1 0;
+                    MUX_SEL_IMM <= #1 1;    // Immediate Addressing - Use value in instruction
+                    WRITEENABLE <= #1 0;    // Disable writing to register
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
+                    MUX_SEL_BNE <= #1 0;
+                    READMEM_ENABLE <= #1 0;
+                    WRITEMEM_ENABLE <= 0;   // TEMP FIX !!!!!!!!!!
+                    WRITEMEM_ENABLE <= #1 1;
+                    SEL_DMEM_ALU <= #1 0;
+            end
             // 12 - Mult
             12: begin
                     ALUOP <= #1 4;
@@ -120,6 +197,7 @@ module cpu(
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
                     MUX_SEL_BNE <= #1 0;
+                    SEL_DMEM_ALU <= #1 1;
                 end 
             // 13 - BNE
             13: begin
@@ -141,6 +219,7 @@ module cpu(
                     MUX_SEL_BEQ <= #1 0;
                     MUX_SEL_BNE <= #1 0;
                     SHIFT_DIRECTION <= #1 0;
+                    SEL_DMEM_ALU <= #1 1;
                 end
             // 15 - SLR
             15: begin
@@ -152,6 +231,7 @@ module cpu(
                     MUX_SEL_BEQ <= #1 0;
                     MUX_SEL_BNE <= #1 0;
                     SHIFT_DIRECTION <= #1 1;
+                    SEL_DMEM_ALU <= #1 1;
                 end
             // 16 - ROR
             16: begin
@@ -162,6 +242,7 @@ module cpu(
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
                     MUX_SEL_BNE <= #1 0;
+                    SEL_DMEM_ALU <= #1 1;
             end
             // 17 - SRA
             17: begin
@@ -171,13 +252,31 @@ module cpu(
                     WRITEENABLE <= #1 1;
                     MUX_SEL_JUMP <= #1 0;
                     MUX_SEL_BEQ <= #1 0;
-                    MUX_SEL_BNE <= #1 0;        
+                    MUX_SEL_BNE <= #1 0;
+                    SEL_DMEM_ALU <= #1 1;        
                 end
         endcase
     end   
+    
+
+    reg READMEM_ENABLE, WRITEMEM_ENABLE; 
+    wire[7:0] MEM_DATA;
+    wire BUSYWAIT;
+
+    data_memory cpu_data_memory(
+        CLK,
+        RESET,
+        READMEM_ENABLE,
+        WRITEMEM_ENABLE,
+        ALURESULT,
+        REGOUT1,
+        MEM_DATA,
+        BUSYWAIT
+    );
 
     // initialize register module
-    wire[7:0] WRITEDATA, REGOUT1, REGOUT2;
+    reg[7:0] WRITEDATA;
+    wire[7:0] ALURESULT, REGOUT1, REGOUT2;
     reg_file cpu_reg_file(
         WRITEDATA, REGOUT1, REGOUT2, 
         INSTRUCTION[18:16], // INSTRUCTION[23:16] 8 bit rd address but uses only last 3 bits for 8x8 register address 
@@ -185,6 +284,14 @@ module cpu(
         INSTRUCTION[2:0],   // INSTRUCTION[7:0] 8 bit rs address but uses only last 3 bits for 8x8 register address
         WRITEENABLE, CLK, RESET
     );
+
+    // Chose which data to write to register from ALU or DMEM
+    always @ (ALURESULT, MEM_DATA, SEL_DMEM_ALU) begin
+        if (SEL_DMEM_ALU)
+            WRITEDATA = ALURESULT;
+        else
+            WRITEDATA = MEM_DATA;
+    end
 
     // reg to store 2s complement or imm value for the alu input 2
     reg[7:0] TEMP_REG;
@@ -216,7 +323,7 @@ module cpu(
         ALUIN1, 
         ALUIN2, 
         ALUOP, 
-        WRITEDATA,
+        ALURESULT,
         ZERO,
         SHIFT_DIRECTION
     );
@@ -225,9 +332,13 @@ module cpu(
     reg[31:0] PC_REG, NEXT_PC_REG, PC_PLUS_4, SIGN_EXTENDED_TARGET;
     assign PC = PC_REG;
 
-    // update pc at each clock edge
+    // update pc at each clock edge if there is no data being written or read from memory 
+    // (update pc only if no stalling is required)
     always @ (posedge CLK)
-        #1 PC_REG = NEXT_PC_REG;
+    begin
+        if (!BUSYWAIT)
+            #1 PC_REG = NEXT_PC_REG;
+    end
 
     // set pc to reset asynchronously at high reset signal
     always @ (RESET)
