@@ -46,7 +46,8 @@ module alu(
     // declare ports
     input [7:0] DATA1, DATA2,
     input [2:0] SELECT,
-    output [7:0] OUTPUT  
+    output [7:0] OUTPUT,
+    output ZERO  
 );
     
     // declare register to store computed value after delay
@@ -71,5 +72,18 @@ module alu(
 
     // assign computed value to output port
     assign OUTPUT = RESULT;
+
+    // Implement flag for branch if equal (BEQ) functionality
+    reg ZERO_REG;
+
+    always @ (RESULT)
+    begin
+        if (RESULT == 0)
+            ZERO_REG = 1;
+        else
+            ZERO_REG = 0;
+    end
+
+    assign ZERO = ZERO_REG;
 
 endmodule

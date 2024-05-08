@@ -61,8 +61,9 @@ module cpu_tb;
             $dumpvars(1, cpu_tb.mycpu.cpu_reg_file.REGISTER[i]);
         end
         
-        // TODO: Reset the CPU (by giving a pulse to RESET signal) to start the program execution
         CLK = 1'b0;
+        
+        // TODO: Reset the CPU (by giving a pulse to RESET signal) to start the program execution
         RESET = 1'b0;
         #4
         RESET = 1'b1;

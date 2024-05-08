@@ -21,6 +21,8 @@ module cpu(
     reg WRITEENABLE; // write enable signal to register file 
     reg MUX_SEL_NEG; // mux select signal to chose between immediate value or register value for alu
     reg MUX_SEL_IMM; // mux select signal to chose between original register or negated value for alu sub instruction
+    reg MUX_SEL_JUMP; // mux select signal to add jump address to pc
+    reg MUX_SEL_BEQ; // mux select signal to add BEQ jump address to pc
     reg[7:0] ALUIN1, ALUIN2; // alu input registers
     reg[2:0] ALUOP; // alu opcode
     
@@ -32,14 +34,19 @@ module cpu(
             0:  begin
                     ALUOP <= #1 0;
                     MUX_SEL_IMM <= #1 1;
-                    WRITEENABLE <= #1 1; 
+                    MUX_SEL_NEG <= #1 0;
+                    WRITEENABLE <= #1 1;
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0; 
                 end
             // 1 - mov
             1:  begin
                     ALUOP <= #1 0;
                     MUX_SEL_IMM <= #1 0;
                     MUX_SEL_NEG <= #1 0;
-                    WRITEENABLE <= #1 1; 
+                    WRITEENABLE <= #1 1;
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0; 
                 end
             // 2 - Add
             2:  begin
@@ -47,6 +54,8 @@ module cpu(
                     MUX_SEL_NEG <= #1 0;
                     MUX_SEL_IMM <= #1 0;
                     WRITEENABLE <= #1 1;
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
                 end
             // 3 - Sub
             3:  begin
@@ -54,6 +63,8 @@ module cpu(
                     MUX_SEL_NEG <= #1 1;
                     MUX_SEL_IMM <= #1 0;
                     WRITEENABLE <= #1 1;
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
                 end
             // 4 - And
             4:  begin
@@ -61,6 +72,8 @@ module cpu(
                     MUX_SEL_NEG <= #1 0;
                     MUX_SEL_IMM <= #1 0;
                     WRITEENABLE <= #1 1;
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
                 end
             // 5 - Or
             5:  begin
@@ -68,6 +81,25 @@ module cpu(
                     MUX_SEL_NEG <= #1 0;
                     MUX_SEL_IMM <= #1 0;
                     WRITEENABLE <= #1 1;
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 0;
+                end
+            // 6 - Jump
+            6:  begin
+                    MUX_SEL_NEG <= #1 0;
+                    MUX_SEL_IMM <= #1 0;
+                    WRITEENABLE <= #1 0;
+                    MUX_SEL_JUMP <= #1 1;
+                    MUX_SEL_BEQ <= #1 0;
+                end
+            // 7 - BEQ
+            7:  begin
+                    ALUOP <= #1 1;      // Subtract two operands to compare equality
+                    MUX_SEL_NEG <= #1 1;
+                    MUX_SEL_IMM <= #1 0;
+                    WRITEENABLE <= #1 0;
+                    MUX_SEL_JUMP <= #1 0;
+                    MUX_SEL_BEQ <= #1 1;
                 end
         endcase
     end   
@@ -104,16 +136,20 @@ module cpu(
     always @ (REGOUT1)
         ALUIN1 = REGOUT1;
 
+    
+    wire ZERO;
+
     // initialize alu module
     alu cpu_alu(
         ALUIN1, 
         ALUIN2, 
         ALUOP, 
-        WRITEDATA
+        WRITEDATA,
+        ZERO
     );
 
     // declare register to hold pc value and calculated next pc value
-    reg[31:0] PC_REG, NEXT_PC_REG;
+    reg[31:0] PC_REG, NEXT_PC_REG, SIGN_EXTENDED_TARGET;
     assign PC = PC_REG;
 
     // update pc at each clock edge
@@ -133,5 +169,16 @@ module cpu(
     // increment next pc after pc update
     always @ (PC_REG)
         #1 NEXT_PC_REG = NEXT_PC_REG + 4;
+
+    // Sign extend jump target to 32 bits and convert from a word address to a byte address
+    always @ (INSTRUCTION)
+        SIGN_EXTENDED_TARGET <= { {24{INSTRUCTION[23]}}, INSTRUCTION[23:16] << 2 };
+
+    // Add jump target to pc
+    always @ (MUX_SEL_BEQ, ZERO, MUX_SEL_JUMP)
+    begin
+        if ((MUX_SEL_BEQ && ZERO) || MUX_SEL_JUMP)
+            #2 NEXT_PC_REG = NEXT_PC_REG + SIGN_EXTENDED_TARGET;
+    end
 
 endmodule

@@ -109,7 +109,7 @@ module reg_file(
     // Declare output registers
     reg[7:0] OUT1REGISTER, OUT2REGISTER;
 
-    // Asynchronously read output registers
+    // asynchronously read output registers
     always @ (OUT1ADDRESS, OUT2ADDRESS, REGISTER[OUT1ADDRESS], REGISTER[OUT2ADDRESS])
     begin
        OUT1REGISTER <= #2 REGISTER[OUT1ADDRESS];
@@ -123,7 +123,7 @@ module reg_file(
 
     //==========INPUT REGISTER HANDLING==========
 
-    // Synchronously write to input register at positive edge of clock
+    // synchronously write to input register at positive edge of clock
     // when the WRITE signal is high
     always @ (posedge CLK)
     begin
@@ -133,8 +133,7 @@ module reg_file(
     end
 
     //==========REGISTER RESET==========
-    
-    // Synchronously reset registers at positive edge of clock
+    // synchronously reset registers at positive edge of clock
     // when the RESET is high
     always @ (posedge CLK)
     begin
